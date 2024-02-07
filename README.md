@@ -4,7 +4,7 @@ A minimal Pytorch-compatible library supporting basic unstructured sparse operat
 Additionally, the kernels used in the [Robust Adaptation (RoSA)](https://arxiv.org/abs/2401.04679) paper are included in this repository.
 
 ## Installation
-Simply make sure you have [pytorch](https://pytorch.org/) installed, and run 
+Simply make sure you have [pytorch](https://pytorch.org/) installed (preferably install by conda instead of pip to make sure the dependencies are installed correctly), and run 
 ```
 pip install .
 ```
