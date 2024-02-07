@@ -37,4 +37,4 @@ Transposes a CSR sparse matrix `A` using the `cuSPARSE` library. Simply use `spo
 
 ## Important Notes
 - Make sure that every input to the *spops* methods is [contiguous](https://pytorch.org/docs/stable/generated/torch.Tensor.contiguous.html).
-- The `row_offset` list should have `dtype=torch.int32`, while the other index lists should have `dtype=torch.int16`.
+- The `row_offsets` list should have `dtype=torch.int32`, while the other index lists should have `dtype=torch.int16`.
