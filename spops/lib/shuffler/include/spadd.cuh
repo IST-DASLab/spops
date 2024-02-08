@@ -30,7 +30,7 @@ __global__ void spadd_csr_v1(
 	  b_values[r * n + c] += val;
 	} else {
 	  auto out = b_values[r * n + c];
-	  // b_values[r * n + c] = __hadd(out, val);
+	  b_values[r * n + c] = __hadd(out, val);
 	}
   }
 }
