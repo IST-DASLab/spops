@@ -40,7 +40,7 @@ Transposes a CSR sparse matrix `A` using the `cuSPARSE` library. Simply use `spo
 - The `row_offsets` list should have `dtype=torch.int32`, while the other index lists should have `dtype=torch.int16`.
 
 ## Citation
-If you plan to use our work in you projects, please consider citing our paper:
+If you plan to use our work in your projects, please consider citing our paper:
 
 ```
 @article{nikdan2024rosa,
