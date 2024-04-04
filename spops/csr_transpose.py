@@ -5,6 +5,7 @@ from torch import int32, float16, float32, bfloat16
 def csr_transpose(A_val, A_row_offsets, A_col_indices, M, N, backend='cusparse'):
     assert backend in ['cusparse']
     assert A_val.dtype in [float16, float32, bfloat16], 'Only fp32, bf16 and fp16 are supported for sddmm.'
+    assert A_val.is_cuda
     
     # AT_val = torch.zeros_like(A_val)
     # AT_row_offsets = torch.zeros((N + 1, ), dtype=int32, device=A_row_offsets.device)
