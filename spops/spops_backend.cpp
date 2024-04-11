@@ -14,6 +14,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("structure_aware_sddmm_fp32_benchmark", &structure_aware_sddmm_fp32_benchmark, "Structure Aware SDDMM FP32 (CUDA)");
   m.def("sputnik_sddmm_fp32", &sputnik_sddmm_fp32, "Sputnik SDDMM FP32 (CUDA)");
   m.def("sputnik_sddmm_fp32", &sputnik_sddmm_fp32_benchmark, "Sputnik SDDMM FP32 (CUDA)");
-  m.def("csr_transpose_fp32", &csr_transpose_fp32, "cuSparse CSR Transpose FP32 (CUDA)");
-  m.def("csr_transpose_fp16", &csr_transpose_fp16, "cuSparse CSR Transpose FP16 (CUDA)");
+  // m.def("csr_transpose_fp32", &csr_transpose_fp32, "cuSparse CSR Transpose FP32 (CUDA)");
+  // m.def("csr_transpose_fp16", &csr_transpose_fp16, "cuSparse CSR Transpose FP16 (CUDA)");
 }

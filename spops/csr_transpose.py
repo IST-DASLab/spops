@@ -23,14 +23,14 @@ def csr_transpose(A_val, A_row_offsets, A_col_indices, M, N, backend=None):
             tsp.crow_indices().to(A_row_offsets.dtype),
             tsp.col_indices().to(A_col_indices.dtype)
         )
-    elif backend == 'cusparse':
-        assert A_val.is_cuda
-        assert backend in ['cusparse']
-        if A_val.dtype == float16:
-            out = spops_backend.csr_transpose_fp16(A_val, A_row_offsets.to(int32), A_col_indices.to(int32), M, N)
-        else:
-            out = spops_backend.csr_transpose_fp32(A_val.to(float32), A_row_offsets.to(int32), A_col_indices.to(int32), M, N)
-        out[0] = out[0].to(A_val.dtype)
+    # elif backend == 'cusparse':
+    #     assert A_val.is_cuda
+    #     assert backend in ['cusparse']
+    #     if A_val.dtype == float16:
+    #         out = spops_backend.csr_transpose_fp16(A_val, A_row_offsets.to(int32), A_col_indices.to(int32), M, N)
+    #     else:
+    #         out = spops_backend.csr_transpose_fp32(A_val.to(float32), A_row_offsets.to(int32), A_col_indices.to(int32), M, N)
+    #     out[0] = out[0].to(A_val.dtype)
     else:
         assert backend == 'scipy'
         assert not A_val.is_cuda

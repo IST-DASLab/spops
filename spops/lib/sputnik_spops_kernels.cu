@@ -9,10 +9,10 @@
 #include "./sputnik/spmm/cuda_spmm.cu.cc"
 #include "./sputnik/sddmm/cuda_sddmm.cu.cc"
 #include "shuffler/include/spadd.cuh"
-#include "cusparse.h"
+// #include "cusparse.h"
 #include <iostream>
 #include <cstdio>
-#include "cuda_fp16.h"
+// #include "cuda_fp16.h"
 
 inline void start_clock(cudaEvent_t &start) {
   AT_CUDA_CHECK(cudaEventRecord(start, 0));
@@ -210,132 +210,132 @@ std::vector <torch::Tensor> sputnik_sddmm_cuda_fp32(
   return {C_val};
 }
 
-std::vector <torch::Tensor> csr_transpose_cuda_fp32(
-	// torch::Tensor AT_val, // output values
-	// torch::Tensor AT_row_offsets, // output row offsets
-	// torch::Tensor AT_col_indices, // output column indices
-	torch::Tensor A_val,
-	torch::Tensor A_row_offsets,
-	torch::Tensor A_col_indices,
-	int M,
-	int N) {
+// std::vector <torch::Tensor> csr_transpose_cuda_fp32(
+// 	// torch::Tensor AT_val, // output values
+// 	// torch::Tensor AT_row_offsets, // output row offsets
+// 	// torch::Tensor AT_col_indices, // output column indices
+// 	torch::Tensor A_val,
+// 	torch::Tensor A_row_offsets,
+// 	torch::Tensor A_col_indices,
+// 	int M,
+// 	int N) {
 
-  cusparseHandle_t handle = 0;
-  cusparseCreate(&handle);
-  cusparseSetStream(handle, at::cuda::getCurrentCUDAStream().stream());
+//   cusparseHandle_t handle = 0;
+//   cusparseCreate(&handle);
+//   cusparseSetStream(handle, at::cuda::getCurrentCUDAStream().stream());
 
-  const auto nnz = A_val.size(0);
-  auto AT_val = torch::zeros_like(A_val);
-  auto AT_row_offsets = torch::zeros(N + 1, torch::dtype(torch::kInt32).layout(torch::kStrided).device(A_val.device()));
-  auto AT_col_indices = torch::zeros_like(A_col_indices);
+//   const auto nnz = A_val.size(0);
+//   auto AT_val = torch::zeros_like(A_val);
+//   auto AT_row_offsets = torch::zeros(N + 1, torch::dtype(torch::kInt32).layout(torch::kStrided).device(A_val.device()));
+//   auto AT_col_indices = torch::zeros_like(A_col_indices);
 
-  size_t buffer_size = 0;
-  cusparseCsr2cscEx2_bufferSize(
-	  handle,
-	  M,
-	  N,
-	  nnz,
-	  A_val.data<float>(),
-	  A_row_offsets.data<int>(),
-	  A_col_indices.data<int>(),
-	  AT_val.data<float>(),
-	  AT_row_offsets.data<int>(),
-	  AT_col_indices.data<int>(),
-	  CUDA_R_32F,
-	  CUSPARSE_ACTION_NUMERIC,
-	  CUSPARSE_INDEX_BASE_ZERO,
-	  CUSPARSE_CSR2CSC_ALG1,
-	  &buffer_size
-  );
+//   size_t buffer_size = 0;
+//   cusparseCsr2cscEx2_bufferSize(
+// 	  handle,
+// 	  M,
+// 	  N,
+// 	  nnz,
+// 	  A_val.data<float>(),
+// 	  A_row_offsets.data<int>(),
+// 	  A_col_indices.data<int>(),
+// 	  AT_val.data<float>(),
+// 	  AT_row_offsets.data<int>(),
+// 	  AT_col_indices.data<int>(),
+// 	  CUDA_R_32F,
+// 	  CUSPARSE_ACTION_NUMERIC,
+// 	  CUSPARSE_INDEX_BASE_ZERO,
+// 	  CUSPARSE_CSR2CSC_ALG1,
+// 	  &buffer_size
+//   );
 
-  int buffer_size_signed = (buffer_size + sizeof(float) - 1) / sizeof(float);
-  auto workspace =
-	  torch::zeros(buffer_size_signed, torch::dtype(torch::kFloat32).layout(torch::kStrided).device(A_val.device()));
+//   int buffer_size_signed = (buffer_size + sizeof(float) - 1) / sizeof(float);
+//   auto workspace =
+// 	  torch::zeros(buffer_size_signed, torch::dtype(torch::kFloat32).layout(torch::kStrided).device(A_val.device()));
 
-  cusparseCsr2cscEx2(
-	  handle,
-	  M,
-	  N,
-	  nnz,
-	  A_val.data<float>(),
-	  A_row_offsets.data<int>(),
-	  A_col_indices.data<int>(),
-	  AT_val.data<float>(),
-	  AT_row_offsets.data<int>(),
-	  AT_col_indices.data<int>(),
-	  CUDA_R_32F,
-	  CUSPARSE_ACTION_NUMERIC,
-	  CUSPARSE_INDEX_BASE_ZERO,
-	  CUSPARSE_CSR2CSC_ALG1,
-	  workspace.data<float>()
-  );
+//   cusparseCsr2cscEx2(
+// 	  handle,
+// 	  M,
+// 	  N,
+// 	  nnz,
+// 	  A_val.data<float>(),
+// 	  A_row_offsets.data<int>(),
+// 	  A_col_indices.data<int>(),
+// 	  AT_val.data<float>(),
+// 	  AT_row_offsets.data<int>(),
+// 	  AT_col_indices.data<int>(),
+// 	  CUDA_R_32F,
+// 	  CUSPARSE_ACTION_NUMERIC,
+// 	  CUSPARSE_INDEX_BASE_ZERO,
+// 	  CUSPARSE_CSR2CSC_ALG1,
+// 	  workspace.data<float>()
+//   );
 
-  cusparseDestroy(handle);
+//   cusparseDestroy(handle);
 
-  return {AT_val, AT_row_offsets, AT_col_indices};
-}
+//   return {AT_val, AT_row_offsets, AT_col_indices};
+// }
 
-std::vector <torch::Tensor> csr_transpose_cuda_fp16(
-	// torch::Tensor AT_val, // output values
-	// torch::Tensor AT_row_offsets, // output row offsets
-	// torch::Tensor AT_col_indices, // output column indices
-	torch::Tensor A_val,
-	torch::Tensor A_row_offsets,
-	torch::Tensor A_col_indices,
-	int M,
-	int N) {
+// std::vector <torch::Tensor> csr_transpose_cuda_fp16(
+// 	// torch::Tensor AT_val, // output values
+// 	// torch::Tensor AT_row_offsets, // output row offsets
+// 	// torch::Tensor AT_col_indices, // output column indices
+// 	torch::Tensor A_val,
+// 	torch::Tensor A_row_offsets,
+// 	torch::Tensor A_col_indices,
+// 	int M,
+// 	int N) {
 
-  cusparseHandle_t handle = 0;
-  cusparseCreate(&handle);
-  cusparseSetStream(handle, at::cuda::getCurrentCUDAStream().stream());
+//   cusparseHandle_t handle = 0;
+//   cusparseCreate(&handle);
+//   cusparseSetStream(handle, at::cuda::getCurrentCUDAStream().stream());
 
-  const auto nnz = A_val.size(0);
-  auto AT_val = torch::zeros_like(A_val);
-  auto AT_row_offsets = torch::zeros(N + 1, torch::dtype(torch::kInt32).layout(torch::kStrided).device(A_val.device()));
-  auto AT_col_indices = torch::zeros_like(A_col_indices);
+//   const auto nnz = A_val.size(0);
+//   auto AT_val = torch::zeros_like(A_val);
+//   auto AT_row_offsets = torch::zeros(N + 1, torch::dtype(torch::kInt32).layout(torch::kStrided).device(A_val.device()));
+//   auto AT_col_indices = torch::zeros_like(A_col_indices);
 
-  size_t buffer_size = 0;
-  cusparseCsr2cscEx2_bufferSize(
-	  handle,
-	  M,
-	  N,
-	  nnz,
-	  A_val.data<at::Half>(),
-	  A_row_offsets.data<int>(),
-	  A_col_indices.data<int>(),
-	  AT_val.data<at::Half>(),
-	  AT_row_offsets.data<int>(),
-	  AT_col_indices.data<int>(),
-	  CUDA_R_16F,
-	  CUSPARSE_ACTION_NUMERIC,
-	  CUSPARSE_INDEX_BASE_ZERO,
-	  CUSPARSE_CSR2CSC_ALG1,
-	  &buffer_size
-  );
+//   size_t buffer_size = 0;
+//   cusparseCsr2cscEx2_bufferSize(
+// 	  handle,
+// 	  M,
+// 	  N,
+// 	  nnz,
+// 	  A_val.data<at::Half>(),
+// 	  A_row_offsets.data<int>(),
+// 	  A_col_indices.data<int>(),
+// 	  AT_val.data<at::Half>(),
+// 	  AT_row_offsets.data<int>(),
+// 	  AT_col_indices.data<int>(),
+// 	  CUDA_R_16F,
+// 	  CUSPARSE_ACTION_NUMERIC,
+// 	  CUSPARSE_INDEX_BASE_ZERO,
+// 	  CUSPARSE_CSR2CSC_ALG1,
+// 	  &buffer_size
+//   );
 
-  int buffer_size_signed = (buffer_size + sizeof(float) - 1) / sizeof(float);
-  auto workspace =
-	  torch::zeros(buffer_size_signed, torch::dtype(torch::kFloat32).layout(torch::kStrided).device(A_val.device()));
+//   int buffer_size_signed = (buffer_size + sizeof(float) - 1) / sizeof(float);
+//   auto workspace =
+// 	  torch::zeros(buffer_size_signed, torch::dtype(torch::kFloat32).layout(torch::kStrided).device(A_val.device()));
 
-  cusparseCsr2cscEx2(
-	  handle,
-	  M,
-	  N,
-	  nnz,
-	  A_val.data<at::Half>(),
-	  A_row_offsets.data<int>(),
-	  A_col_indices.data<int>(),
-	  AT_val.data<at::Half>(),
-	  AT_row_offsets.data<int>(),
-	  AT_col_indices.data<int>(),
-	  CUDA_R_16F,
-	  CUSPARSE_ACTION_NUMERIC,
-	  CUSPARSE_INDEX_BASE_ZERO,
-	  CUSPARSE_CSR2CSC_ALG1,
-	  workspace.data<float>()
-  );
+//   cusparseCsr2cscEx2(
+// 	  handle,
+// 	  M,
+// 	  N,
+// 	  nnz,
+// 	  A_val.data<at::Half>(),
+// 	  A_row_offsets.data<int>(),
+// 	  A_col_indices.data<int>(),
+// 	  AT_val.data<at::Half>(),
+// 	  AT_row_offsets.data<int>(),
+// 	  AT_col_indices.data<int>(),
+// 	  CUDA_R_16F,
+// 	  CUSPARSE_ACTION_NUMERIC,
+// 	  CUSPARSE_INDEX_BASE_ZERO,
+// 	  CUSPARSE_CSR2CSC_ALG1,
+// 	  workspace.data<float>()
+//   );
 
-  cusparseDestroy(handle);
+//   cusparseDestroy(handle);
 
-  return {AT_val, AT_row_offsets, AT_col_indices};
-}
+//   return {AT_val, AT_row_offsets, AT_col_indices};
+// }

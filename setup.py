@@ -2,7 +2,7 @@ from setuptools import setup, find_packages, Extension
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 import subprocess
 
-subprocess.run(["pip install numpy ninja pybind11"], shell=True)
+subprocess.run(["pip install numpy scipy ninja pybind11"], shell=True)
 proc = subprocess.Popen(["python3 -m pybind11 --includes"], stdout=subprocess.PIPE, shell=True)
 (out, err) = proc.communicate()
 out = out.decode('ascii').strip().split()
@@ -22,7 +22,7 @@ setup(
                                 '-arch=sm_80',
                                 # https://github.com/pytorch/pytorch/blob/main/torch/utils/cpp_extension.py#L1050C13-L1050C17
                                 # '-dlto',
-                                '-lcusparse',
+                                # '-lcusparse',
                                 '-lcublas',
                                 '-lcudart',
                                 # '--ptxas-options=-v',
