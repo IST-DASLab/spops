@@ -1,5 +1,10 @@
 import torch
-import spops_backend
+
+try:
+    import spops_backend
+except ModuleNotFoundError:
+    spops_backend = None # cpu-only version
+
 import spops_backend_cpu
 from torch import int32, float16, float32, bfloat16
 
@@ -7,6 +12,7 @@ def sddmm(mask_row_offsets, mask_row_indices, mask_col_indices, A, BT, backend=N
     assert all([t.dtype in [float16, float32, bfloat16] for t in [A, BT]]), 'Only fp32, bf16 and fp16 are supported for sddmm.'
 
     if A.is_cuda:
+        assert spops_backend is not None, 'the tensor is on cuda, while you have a cpu-only version of spops installed.'
         if backend is None:
             backend = 'structure_aware'
         assert backend in ['sputnik', 'structure_aware']

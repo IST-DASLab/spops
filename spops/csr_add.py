@@ -1,5 +1,10 @@
 import torch
-import spops_backend
+
+try:
+    import spops_backend
+except ModuleNotFoundError:
+    spops_backend = None # cpu-only version
+    
 import spops_backend_cpu
 from torch import int16, int32, float16, float32, bfloat16
 
@@ -9,6 +14,7 @@ def csr_add(A_val, A_row_offsets, A_row_indices, A_col_indices, B, inplace=False
     out = B if inplace else B.clone()
 
     if A_val.is_cuda:
+        assert spops_backend is not None, 'the tensor is on cuda, while you have a cpu-only version of spops installed.'
         assert A_row_offsets.dtype == int32
         for t in [A_row_indices, A_col_indices]:
             assert t.dtype == int16

@@ -1,5 +1,4 @@
 import torch
-import spops_backend
 from torch import int32, float16, float32, bfloat16
 from scipy.sparse import csr_matrix
 
