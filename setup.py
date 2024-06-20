@@ -10,6 +10,7 @@ out = out.decode('ascii').strip().split()
 setup(
     name='spops',
     packages=find_packages(exclude=['tests', 'tests.*']),
+    python_requires='>=3.10',
     ext_modules=[CUDAExtension(
         'spops_backend',
         ['./spops/spops_backend.cpp', './spops/lib/sputnik_spops_kernels.cu', './spops/lib/structure_aware_spops_kernels.cu',
