@@ -4,10 +4,62 @@ A minimal Pytorch-compatible library supporting basic unstructured sparse operat
 Additionally, the kernels used in the [Robust Adaptation (RoSA)](https://arxiv.org/abs/2401.04679) paper are included in this repository.
 
 ## Installation
-Simply make sure you have [pytorch](https://pytorch.org/) installed (preferably install by conda instead of pip to make sure the dependencies are installed correctly), and run 
+
+`spops` builds a CUDA / CPU extension against your installed PyTorch, so PyTorch
+(and a matching CUDA toolkit) must be available **before** the build. The
+package uses a standard PEP 517 build (`setup.py` + `pyproject.toml`).
+
+### Requirements
+
+- Python 3.9+
+- PyTorch 2.0+ (must be importable at build time)
+- CUDA toolkit matching your PyTorch build (for the GPU extension)
+- `ninja`, `pybind11`, `numpy`, `setuptools`, `wheel` available in the build env
+
+### Recommended: install with `--no-build-isolation`
+
+Because PEP 517 isolated builds create a fresh env without your CUDA-enabled
+PyTorch, you almost always want to build against the env you have:
+
+```bash
+pip install ninja pybind11 numpy scipy
+pip install --no-build-isolation .
 ```
-pip install .
+
+For local development:
+
+```bash
+pip install --no-build-isolation -e .
 ```
+
+### Selecting target GPU architectures
+
+The build emits PTX/cubin for `sm_80;sm_89;sm_90+PTX` by default — i.e. A100,
+L40/L40S, and H100, with PTX embedded for forward compatibility. Override via
+`TORCH_CUDA_ARCH_LIST` for faster, GPU-specific builds:
+
+```bash
+TORCH_CUDA_ARCH_LIST="9.0"       pip install --no-build-isolation .  # H100
+TORCH_CUDA_ARCH_LIST="8.9"       pip install --no-build-isolation .  # L40
+TORCH_CUDA_ARCH_LIST="8.0;9.0+PTX" pip install --no-build-isolation .  # A100 + JIT
+```
+
+### Using with [`uv`](https://docs.astral.sh/uv/)
+
+Add `spops` as a path or git source and tell uv to skip build isolation so the
+build can see the project's `torch`:
+
+```toml
+[tool.uv.sources]
+spops = { path = "path/to/spops" }       # built wheel install
+# spops = { path = "path/to/spops", editable = true }  # editable install
+
+[tool.uv]
+no-build-isolation-package = ["spops"]
+```
+
+Make sure `torch`, `ninja`, `pybind11`, `numpy`, `setuptools`, and `wheel` are
+in your project's dependencies so they are present when uv builds spops.
 
 ## Usage
 An `m x n` sparse matrix with `nnz` non-zero values in *spops* is stored in CSR format, including the following lists:
@@ -32,12 +84,33 @@ Multiply two dense matrices `A` and `B`, but only calculate the result for a spa
 Default is `structure_aware`.
 
 ### CSR Transpose \[sparse = sparse.t()\]
-Transposes a CSR sparse matrix `A` using the `cuSPARSE` library. Simply use `spops.csr_transpose(A_val, A_row_offsets, A_col_indices, m, n)` to achieve this, where `m` and `n` are the number of rows and columns of `A`, respectively.
+Transposes a CSR sparse matrix `A`. Use `spops.csr_transpose(A_val, A_row_offsets, A_col_indices, m, n)`, where `m` and `n` are the number of rows and columns of `A`. Two backends are available via the `backend` argument:
+- `torch` (default): uses PyTorch's built-in sparse CSR support; works for both CPU and CUDA tensors.
+- `scipy`: uses `scipy.sparse` on the CPU.
 
 
 ## Important Notes
 - Make sure that every input to the *spops* methods is [contiguous](https://pytorch.org/docs/stable/generated/torch.Tensor.contiguous.html).
-- The `row_offsets` list should have `dtype=torch.int32`, while the other index lists should have `dtype=torch.int16`.
+- `row_offsets` should always be `torch.int32`.
+- For the CUDA `csr_add` and the fp16 fast path of `spmm`, the other index lists
+  (`row_idx`, `col_idx`) must be `torch.int16`. The fp32 CUDA paths and the
+  `sputnik` SDDMM backend accept `int32` and cast internally; the
+  `structure_aware` SDDMM backend takes `int16` directly.
+- `row_idx` is **not** a per-nnz row label — it is a length-`m` permutation of
+  row indices sorted by descending non-zero count, used by the underlying
+  sputnik kernels for warp-level load balancing. The canonical construction is
+  `torch.argsort(-torch.diff(row_offsets)).int()`.
+
+## Testing
+
+A pytest suite covering all four operations on both CPU and CUDA lives in
+`tests/`. CUDA tests are skipped automatically when no GPU is available.
+
+```bash
+pip install pytest
+pytest -q tests                     # full suite
+pytest -q tests -k "not cuda"       # CPU only
+```
 
 ## Citation
 If you plan to use our work in your projects, please consider citing our paper:
