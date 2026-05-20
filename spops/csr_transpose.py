@@ -1,6 +1,5 @@
 import torch
-import spops_backend
-from torch import int32, float16, float32, bfloat16
+from torch import bfloat16, float16, float32, int32
 from scipy.sparse import csr_matrix
 
 def csr_transpose(A_val, A_row_offsets, A_col_indices, M, N, backend=None):

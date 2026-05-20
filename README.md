@@ -1,7 +1,7 @@
 # Sparse Operations (*spops*)
 
 A minimal Pytorch-compatible library supporting basic unstructured sparse operations (spops). Some of the kernels are borrowed from [sputnik](https://github.com/google-research/sputnik).
-Additionally, the kernels used in the [Robust Adaptation (RoSA)](https://arxiv.org/abs/2401.04679) paper are included in this repository.
+Additionally, the kernels used in the [Robust Adaptation (RoSA)](https://arxiv.org/abs/2401.04679) paper ([GitHub](https://github.com/IST-DASLab/RoSA)) are included in this repository.
 
 ## Installation
 

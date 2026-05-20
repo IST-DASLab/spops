@@ -2,10 +2,24 @@ import os
 import re
 
 import pybind11
+import torch
 from setuptools import Extension, find_packages, setup
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+from torch.utils.cpp_extension import CUDA_HOME, BuildExtension, CUDAExtension
 
 pybind_includes = [f"-I{pybind11.get_include()}", f"-I{pybind11.get_include(user=True)}"]
+
+
+def _cuda_is_available() -> bool:
+    """Return True if we can build the CUDA extension.
+
+    Build-time CUDA availability is independent from runtime ``torch.cuda``;
+    we need ``nvcc`` (i.e. ``CUDA_HOME``) more than a live GPU. This lets us
+    build CPU-only wheels on CI runners without a CUDA toolkit while still
+    producing GPU-enabled wheels on developer / build boxes.
+    """
+    if os.environ.get("SPOPS_FORCE_CPU_ONLY", "0") == "1":
+        return False
+    return CUDA_HOME is not None and torch.backends.cuda.is_built()
 
 
 def _cuda_gencode_flags():
@@ -28,12 +42,29 @@ def _cuda_gencode_flags():
     return flags
 
 
-_gencode = _cuda_gencode_flags()
+_cpu_extension = Extension(
+    "spops_backend_cpu",
+    ["./spops/spops_backend_cpu.cpp"],
+    extra_compile_args=[
+        "-O3",
+        "-Wall",
+        "-shared",
+        "-std=c++11",
+        "-fPIC",
+        *pybind_includes,
+        "-march=native",
+        "-fopenmp",
+        "-ffast-math",
+    ],
+    extra_link_args=["-lgomp"],
+)
 
-setup(
-    name="spops",
-    packages=find_packages(exclude=["tests", "tests.*"]),
-    ext_modules=[
+ext_modules = [_cpu_extension]
+
+if _cuda_is_available():
+    _gencode = _cuda_gencode_flags()
+    ext_modules.insert(
+        0,
         CUDAExtension(
             "spops_backend",
             [
@@ -56,22 +87,16 @@ setup(
             },
             libraries=["cusparse", "cublas"],
         ),
-        Extension(
-            "spops_backend_cpu",
-            ["./spops/spops_backend_cpu.cpp"],
-            extra_compile_args=[
-                "-O3",
-                "-Wall",
-                "-shared",
-                "-std=c++11",
-                "-fPIC",
-                *pybind_includes,
-                "-march=native",
-                "-fopenmp",
-                "-ffast-math",
-            ],
-            extra_link_args=["-lgomp"],
-        ),
-    ],
+    )
+else:
+    print(
+        "spops: CUDA toolkit not detected (CUDA_HOME unset or torch built without CUDA). "
+        "Building CPU-only wheel; GPU kernels will be unavailable at runtime."
+    )
+
+setup(
+    name="spops",
+    packages=find_packages(exclude=["tests", "tests.*"]),
+    ext_modules=ext_modules,
     cmdclass={"build_ext": BuildExtension},
 )
