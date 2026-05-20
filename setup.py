@@ -1,47 +1,77 @@
-from setuptools import setup, find_packages, Extension
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
-import subprocess
+import os
+import re
 
-subprocess.run(["pip install numpy scipy ninja pybind11"], shell=True)
-proc = subprocess.Popen(["python3 -m pybind11 --includes"], stdout=subprocess.PIPE, shell=True)
-(out, err) = proc.communicate()
-out = out.decode('ascii').strip().split()
+import pybind11
+from setuptools import Extension, find_packages, setup
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+
+pybind_includes = [f"-I{pybind11.get_include()}", f"-I{pybind11.get_include(user=True)}"]
+
+
+def _cuda_gencode_flags():
+    """Build -gencode flags from TORCH_CUDA_ARCH_LIST.
+
+    Default covers A100 (sm_80), L40/L40S/RTX 6000 Ada (sm_89), and H100 (sm_90),
+    with PTX embedded for the highest arch for forward compatibility.
+    """
+    arch_list = os.environ.get("TORCH_CUDA_ARCH_LIST", "8.0;8.9;9.0+PTX")
+    flags = []
+    for entry in re.split(r"[;\s,]+", arch_list.strip()):
+        if not entry:
+            continue
+        ptx = entry.endswith("+PTX")
+        ver = entry[:-4] if ptx else entry
+        num = ver.replace(".", "")
+        flags.append(f"-gencode=arch=compute_{num},code=sm_{num}")
+        if ptx:
+            flags.append(f"-gencode=arch=compute_{num},code=compute_{num}")
+    return flags
+
+
+_gencode = _cuda_gencode_flags()
 
 setup(
-    name='spops',
-    packages=find_packages(exclude=['tests', 'tests.*']),
-    ext_modules=[CUDAExtension(
-        'spops_backend',
-        ['./spops/spops_backend.cpp', './spops/lib/sputnik_spops_kernels.cu', './spops/lib/structure_aware_spops_kernels.cu',
-         './spops/lib/shuffler_spops_kernels.cu'],
-        dlink=True,
-        dlink_libraries=["dlink_lib"],
-        # https://github.com/zenny-chen/GPU-architectures-docs-and-demos?tab=readme-ov-file#cuda%E7%9B%B8%E5%85%B3%E6%96%87%E6%A1%A3
-        extra_compile_args={'cxx': [],
-                            'nvcc': [
-                                '-arch=sm_80',
-                                # https://github.com/pytorch/pytorch/blob/main/torch/utils/cpp_extension.py#L1050C13-L1050C17
-                                # '-dlto',
-                                # '-lcusparse',
-                                '-lcublas',
-                                '-lcudart',
-                                # '--ptxas-options=-v',
-                                # '-lineinfo',
-                                '-O3',
-                            ],
-                            'nvcclink': ['-arch=sm_80', '--device-link' ]},
-        libraries=['cusparse', 'cublas'],
-    ),
-    Extension(
-        'spops_backend_cpu',
-        [
-            './spops/spops_backend_cpu.cpp',
-        ],
-        extra_compile_args=['-O3', '-Wall', '-shared', '-std=c++11', '-fPIC', *out, '-march=native', '-fopenmp', '-ffast-math'],
-        extra_link_args=['-lgomp']
-    )
+    name="spops",
+    packages=find_packages(exclude=["tests", "tests.*"]),
+    ext_modules=[
+        CUDAExtension(
+            "spops_backend",
+            [
+                "./spops/spops_backend.cpp",
+                "./spops/lib/sputnik_spops_kernels.cu",
+                "./spops/lib/structure_aware_spops_kernels.cu",
+                "./spops/lib/shuffler_spops_kernels.cu",
+            ],
+            dlink=True,
+            dlink_libraries=["dlink_lib"],
+            extra_compile_args={
+                "cxx": [],
+                "nvcc": [
+                    *_gencode,
+                    "-lcublas",
+                    "-lcudart",
+                    "-O3",
+                ],
+                "nvcclink": [*_gencode, "--device-link"],
+            },
+            libraries=["cusparse", "cublas"],
+        ),
+        Extension(
+            "spops_backend_cpu",
+            ["./spops/spops_backend_cpu.cpp"],
+            extra_compile_args=[
+                "-O3",
+                "-Wall",
+                "-shared",
+                "-std=c++11",
+                "-fPIC",
+                *pybind_includes,
+                "-march=native",
+                "-fopenmp",
+                "-ffast-math",
+            ],
+            extra_link_args=["-lgomp"],
+        ),
     ],
-    cmdclass={
-        'build_ext': BuildExtension
-    }
+    cmdclass={"build_ext": BuildExtension},
 )

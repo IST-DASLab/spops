@@ -1,0 +1,30 @@
+name: spops tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  cpu-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyTorch (CPU)
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install build dependencies
+        run: pip install ninja pybind11 numpy scipy pytest
+
+      - name: Install spops (CPU extension)
+        run: pip install --no-build-isolation -e .
+
+      - name: Pytest (CPU tests only)
+        run: pytest -q tests -k "not cuda"

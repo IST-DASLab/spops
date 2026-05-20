@@ -1,0 +1,32 @@
+[build-system]
+requires = [
+    "setuptools>=64",
+    "wheel",
+    "ninja",
+    "pybind11>=2.10",
+    "numpy",
+    "torch>=2.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spops"
+version = "0.1.0"
+description = "Sparse operations CUDA/CPU kernels for PyTorch"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0",
+    "numpy",
+    "scipy",
+    "ninja",
+    "pybind11>=2.10",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

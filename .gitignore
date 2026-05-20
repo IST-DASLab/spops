@@ -1,6 +1,8 @@
 cmake-build-*/
 build/
+dist/
 .idea/
-spops_backend.cpython-310-x86_64-linux-gnu.so
-spops/__pycache__/
+*.so
+**/__pycache__/
 spops.egg-info/
+.pytest_cache/
